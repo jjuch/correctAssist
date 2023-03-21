@@ -1,0 +1,13 @@
+
+~> [correctAssist] Template: Create your template using the following structure
+
+= This is the title
+            
+1. Question 1
+
+1. A. Question 1A
+
+1. B. Question 1B
+
+2. Question 2
+            
