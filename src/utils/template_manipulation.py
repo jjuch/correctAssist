@@ -31,9 +31,9 @@ def read_template(path_template_dir):
         template = f.readlines()
         _ctr = 0 
         for i in range(len(template)):
-            sublevel, result = process_template_line(template[i])
+            sublevel, result, prescript = process_template_line(template[i])
             if result is not None:
-                temp = dict(sublevel=sublevel, title=result)
+                temp = dict(sublevel=sublevel, title=result, prescript=prescript)
                 template_data[_ctr] = temp
                 _ctr += 1
     
@@ -46,6 +46,7 @@ def read_template(path_template_dir):
 def process_template_line(_str):
     result = None
     sublevel = None
+    prescript = None
     _str = _str.lstrip()
     _str = _str.replace("\n", "")
     # remove empty lines
@@ -65,7 +66,8 @@ def process_template_line(_str):
                     _idx = _str.find('.', _idx + 1, len(_str) - 1)
                     _ctr += 1
                 sublevel = _ctr - 1
+                prescript = _str[:last_idx + 1]
                 result = _str[last_idx + 1:]
                 result = result.lstrip()
 
-    return (sublevel, result)
+    return (sublevel, result, prescript)
