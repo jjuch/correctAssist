@@ -23,8 +23,9 @@ class Template():
         * cwd: {}
         * template: 
          """.format(self.cwd)
-        for key, value in self.template_data.items():
-            output += str(key) +  " -> " + str(value) + "\n         "
+        if self.template_data is not None:
+            for key, value in self.template_data.items():
+                output += str(key) +  " -> " + str(value) + "\n         "
         return output
       
     
