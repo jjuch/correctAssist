@@ -1,11 +1,8 @@
 import os
 
-from src.template import Template
 from src.gui import GUI
 
-# Initialize Form
+# create a GUI
 cwd = os.getcwd()
-template = Template(cwd)
-print(template)
-
-GUI(template)
+gui = GUI(cwd)
+print(gui)

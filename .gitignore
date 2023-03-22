@@ -1,6 +1,7 @@
 # Local files
-template/
+template/*
 ENV/
+data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
