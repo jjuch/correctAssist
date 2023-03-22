@@ -40,11 +40,11 @@ class GUI():
     def create_layout(self):
         def TextLabel(text): return sg.Text(text+':', justification='r', size=(50,1))
 
-        def subTitle(text): return sg.Text(text, size=(50,1), font='Any 18')
+        def questionTitle(text): return sg.Text(text, size=(50,1), font='Any 18')
 
         select_student_column = [
             [sg.Text("Current Student: ", justification='l'), sg.Text("Nothing selected",key="_CURRENT_STUDENT_")],
-            [sg.Listbox(list(self.existing_student_data), size=(35,10), enable_events=True, key='_ALL_STUDENTS_')]
+            [sg.Listbox(list(self.existing_student_data), size=(35,25), enable_events=True, key='_ALL_STUDENTS_')]
         ]
 
         add_student_column = [
@@ -62,15 +62,38 @@ class GUI():
             sg.Col(select_student_column), sg.Col(add_student_column)
         ]]
 
+        questions_frame_content = []
+
+        for i in range(len(self.template.template_data)):
+            temp_question_dict = self.template.template_data[i]
+            if temp_question_dict['sublevel'] !=0:
+                question_text = temp_question_dict['prescript'] + " " + temp_question_dict['title']
+                question = [questionTitle(question_text)]
+                answers = [sg.Text("No answers yet.", visible=True)]
+                questions_frame_content.append(question)
+                questions_frame_content.append(answers)
+        
+        questions_frame_column = [[
+            sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True)
+        ]]
+
+
+        bottom_content = [
+            [sg.Cancel(button_color='red', size=(10, 5), key='_CANCEL_'), sg.Button("Save", key='_SAVE_STUDENT_', size=(10,5))]
+        ]             
+
         self.layout = [
             [sg.Push(), sg.Text(self.template.template_data[0]['title'], font='Any 23', justification='c'), sg.Push()],
-            [sg.Frame('Student Selection', student_selection_frame, size=(920, 100), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)]        
+            [sg.Frame('Student Selection', student_selection_frame, size=(920, 100), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
+            [sg.Frame("Questions", questions_frame_column, size=(920, 100), pad=50,  expand_x=True, expand_y=True, relief=sg.RELIEF_GROOVE, border_width=3)],
+            [sg.Col(bottom_content, justification='r')]   
                   ]
         
     def create_window(self):
         sg.theme('LightGrey')
         self.create_layout()
-        window = sg.Window('correctAssist', self.layout, keep_on_top=True, finalize=True, margins=(0,0), resizable=True, size=(1500,500))
+        window = sg.Window('correctAssist', self.layout, keep_on_top=True, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
+        window.Maximize()
         return window
         
 
@@ -91,7 +114,7 @@ class GUI():
             event, values = window.read()
             print(event, " - ", values)
 
-            if event in (sg.WIN_CLOSED, 'Exit'):
+            if event in (sg.WIN_CLOSED, '_CANCEL_'):
                 break
             elif event == '_ALL_STUDENTS_':
                 self.load_student(values['_ALL_STUDENTS_'][0], window=window)
