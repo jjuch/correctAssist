@@ -12,11 +12,11 @@ class GUI():
         self.student_data_full_dir = os.path.join(self.template.cwd, data_dir, student_data_dir)
         if not os.path.exists(self.student_data_full_dir):
             print("[Info] create a student data directory...")
-            os.mkdir(self.student_data_full_dir)
+            os.makedirs(self.student_data_full_dir)
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
-        self.current_student = Student()
-        self.show()
-
+        self.current_student = Student("")
+        if len(self.template.template_data) > 0:
+            self.show()
     
     def __str__(self):
         return self.template.__str__()     
