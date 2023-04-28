@@ -9,12 +9,13 @@ from src.student import Student
 class GUI():
     def __init__(self, cwd):
         self.template = Template(cwd)
-        self.student_data_full_dir = os.path.join(self.template.cwd, data_dir, student_data_dir)
+        self.cwd = cwd
+        self.student_data_full_dir = os.path.join(self.cwd, data_dir, student_data_dir)
         if not os.path.exists(self.student_data_full_dir):
             print("[Info] create a student data directory...")
             os.makedirs(self.student_data_full_dir)
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
-        self.current_student = Student("")
+        self.current_student = None
         if len(self.template.template_data) > 0:
             self.show()
     
@@ -24,17 +25,18 @@ class GUI():
 
     def add_student(self, first_name, last_name, window=None):
         file_name_wo_extension = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
-        file_name = file_name_wo_extension + ".json"
-        try:
-            with open(os.path.join(self.student_data_full_dir, file_name), 'x') as f:
-                f.write("")
+        if file_name_wo_extension not in self.existing_student_data:
+            self.current_student = Student(file_name_wo_extension, self.student_data_full_dir)        
             self.existing_student_data.append(file_name_wo_extension)
             if window is not None:
                 window["_ALL_STUDENTS_"].update((*self.existing_student_data,))
                 window["_CURRENT_STUDENT_"].update(file_name_wo_extension)
                 window.refresh()
-        except FileExistsError as error:
-            print("[Error] This student already exists. Please select the student from the existing students.")
+        else:
+            if window is not None:
+                window["_CURRENT_STUDENT_"].update(file_name_wo_extension)
+                window.refresh() 
+        
         
 
         
