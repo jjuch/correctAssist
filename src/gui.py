@@ -4,6 +4,7 @@ import os
 
 from src import data_dir, student_data_dir
 from src.template import Template
+from src.student import Student
 
 class GUI():
     def __init__(self, cwd):
@@ -13,6 +14,7 @@ class GUI():
             print("[Info] create a student data directory...")
             os.mkdir(self.student_data_full_dir)
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
+        self.current_student = Student()
         self.show()
 
     
@@ -103,6 +105,7 @@ class GUI():
     def load_student(self, student_file, window=None):
         if window is not None:
             window['_CURRENT_STUDENT_'].update(student_file)
+            self.current_student = Student(student_file)
 
     def show(self):
         window = None
