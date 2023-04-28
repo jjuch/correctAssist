@@ -14,7 +14,7 @@ class GUI():
             print("[Info] create a student data directory...")
             os.mkdir(self.student_data_full_dir)
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
-        self.current_student = Student()
+        self.current_student = Student("")
         self.show()
 
     
@@ -23,7 +23,7 @@ class GUI():
 
 
     def add_student(self, first_name, last_name, window=None):
-        file_name_wo_extension = last_name + "_" + first_name
+        file_name_wo_extension = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
         file_name = file_name_wo_extension + ".json"
         try:
             with open(os.path.join(self.student_data_full_dir, file_name), 'x') as f:
@@ -71,9 +71,11 @@ class GUI():
             if temp_question_dict['sublevel'] !=0:
                 question_text = temp_question_dict['prescript'] + " " + temp_question_dict['title']
                 question = [questionTitle(question_text)]
-                answers = [sg.Text("No answers yet.", visible=True)]
+                comments = [sg.Text("No answers yet.", visible=True)] 
+                # TODO: update answers from Q_A.json
+                # TODO: add new comment
                 questions_frame_content.append(question)
-                questions_frame_content.append(answers)
+                questions_frame_content.append(comments)
         
         questions_frame_column = [[
             sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True)
