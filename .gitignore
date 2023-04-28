@@ -1,6 +1,7 @@
 # Local files
 template/*
 ENV/
+CAENV/
 data/*
 
 # Byte-compiled / optimized / DLL files
