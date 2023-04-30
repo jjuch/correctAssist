@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from json import load, dump
 import os
 
-from src import data_dir, student_data_dir
+from src import data_dir, student_data_dir, template_dir, Q_A_file
 from src.template import Template
 from src.student import Student
 
@@ -17,10 +17,26 @@ class GUI():
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
         self.current_student = None
         if len(self.template.template_data) > 0:
+            self.QA_dir = os.path.join(self.cwd, template_dir, Q_A_file)
+            self.QA_data = None
+            self.load_QA()
             self.show()
     
     def __str__(self):
-        return self.template.__str__()     
+        return self.template.__str__()
+
+    def load_QA(self):  
+        with open(self.QA_dir, 'r') as f:
+            self.QA_data = load(f)
+        print(self.QA_data)
+        # write questions structure if QA is empty
+        if len(self.QA_data) == 0:
+            init_dict = {}
+            for key, _ in self.template.template_data.items():
+                init_dict.update({str(key): {}})
+            with open(self.QA_dir, 'w') as f:
+                dump(init_dict, f)
+            self.load_QA()
 
 
     def add_student(self, first_name, last_name, window=None):
@@ -38,7 +54,20 @@ class GUI():
                 window.refresh() 
         
         
-
+    def create_comments(self, question_id):
+        current_comments_dict = self.QA_data[str(question_id)]
+        comments_present = len(current_comments_dict) == 0
+        if comments_present:
+            comments = [[sg.Text("No answers yet.", visible=True)]]
+        else:
+            comments = []
+            for key, value in current_comments_dict.items():
+                comment = [
+                    sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', key), enable_events=True), 
+                    sg.Button("X", key=("_REMOVE_COMMENT", question_id, key), enable_events=True)]
+                
+                comments.append(comment)
+        return comments
         
 
     def create_layout(self):
@@ -73,11 +102,14 @@ class GUI():
             if temp_question_dict['sublevel'] !=0:
                 question_text = temp_question_dict['prescript'] + " " + temp_question_dict['title']
                 question = [questionTitle(question_text)]
-                comments = [sg.Text("No answers yet.", visible=True)] 
+                comments = self.create_comments(i)
                 # TODO: update answers from Q_A.json
-                # TODO: add new comment
+                
+                add_comment = [sg.Input(size=(50, 1), key=('_NEW_COMMENT_', i)), sg.Button('Add',enable_events=True, key=("_ADD_COMMENT_", i), size=(5, 1))]
                 questions_frame_content.append(question)
-                questions_frame_content.append(comments)
+                for i in range (len(comments)):
+                    questions_frame_content.append(comments[i])
+                questions_frame_content.append(add_comment)
         
         questions_frame_column = [[
             sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True)
