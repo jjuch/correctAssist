@@ -29,7 +29,7 @@ class GUI():
     def load_QA(self):  
         with open(self.QA_dir, 'r') as f:
             self.QA_data = load(f)
-        print(self.QA_data)
+
         # write questions structure if QA is empty
         if len(self.QA_data) == 0:
             init_dict = {}
@@ -61,9 +61,11 @@ class GUI():
         comments = []
         comments.append([sg.Text("No answers yet.", visible=no_comments_present, key=('_DEFAULT_EMPTY_COMMENT_', question_id))])
         for key, value in current_comments_dict.items():
-            comment = [
-                sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', key), enable_events=True), 
-                sg.Button("X", key=("_REMOVE_COMMENT", question_id, key), enable_events=True)]
+            comment = [sg.Col([
+                        [
+                            sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', key), enable_events=True), 
+                            sg.Button("X", key=("_REMOVE_COMMENT", question_id, key), enable_events=True)
+                        ]], key=('_COMMENT_ROW_', key))]
             comments.append(comment)
         comments = [sg.Col(comments, key=('_COMMENT_FRAME_', question_id))]
         return comments
@@ -72,7 +74,6 @@ class GUI():
     def add_comment(self, question_id, comment_text):
         comment_id = str(uuid4())
         comment_dict = {comment_id: comment_text}
-        print(self.QA_data, " -> ", question_id)
         self.QA_data[str(question_id)].update(comment_dict)
         with open(self.QA_dir, 'w') as f:
             dump(self.QA_data, f)
@@ -83,10 +84,15 @@ class GUI():
                         sg.Checkbox(comment_text, key=('_CHECKBOX_COMMENT_', comment_id), enable_events=True, default=True), 
                         sg.Button("X", key=("_REMOVE_COMMENT", question_id, comment_id), enable_events=True)
                     ]
-                    ], key=('_COMMENT_ROW_', comment_id))
+                ], key=('_COMMENT_ROW_', comment_id))
             )
         ]
         return new_comment
+    
+    def delete_comment(self, question_id, comment_id):
+        self.QA_data[str(question_id)].pop(comment_id)
+        with open(self.QA_dir, 'w') as f:
+            dump(self.QA_data, f)
         
 
     def create_layout(self):
@@ -199,6 +205,24 @@ class GUI():
                         # resize column such that scrollbar is adjusted
                         window.visibility_changed()
                         window['_QUESTION_FRAME_ALL_'].contents_changed()
+
+                elif event[0] == '_REMOVE_COMMENT':
+                    question_id = event[1]
+                    comment_id = event[2]
+                    if window is not None:
+                        # uncheck before deleting
+                        window[('_CHECKBOX_COMMENT_', comment_id)].update(value=False)
+                        
+                        # hide layout element as it cannot be actually removed
+                        window[('_COMMENT_ROW_', comment_id)].update(visible=False)
+                        window[('_COMMENT_ROW_', comment_id)].hide_row()
+
+                        # resize column such that scrollbar is adjusted
+                        window.visibility_changed()
+                        window['_QUESTION_FRAME_ALL_'].contents_changed()
+                    
+                    # delete comment from QA JSON
+                    self.delete_comment(question_id, comment_id)
 
                         
                 
