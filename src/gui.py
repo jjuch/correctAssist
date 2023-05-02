@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 from json import load, dump
 import os
+from uuid import uuid4
 
 from src import data_dir, student_data_dir, template_dir, Q_A_file
 from src.template import Template
@@ -68,6 +69,15 @@ class GUI():
                 
                 comments.append(comment)
         return comments
+    
+
+    def add_comment(self, question_id, comment_text):
+        comment_id = str(uuid4())
+        comment_dict = {comment_id: comment_text}
+        print(self.QA_data, " -> ", question_id)
+        self.QA_data[str(question_id)].update(comment_dict)
+        with open(self.QA_dir, 'w') as f:
+            dump(self.QA_data, f)
         
 
     def create_layout(self):
@@ -153,13 +163,21 @@ class GUI():
             event, values = window.read()
             print(event, " - ", values)
 
-            if event in (sg.WIN_CLOSED, '_CANCEL_'):
-                break
-            elif event == '_ALL_STUDENTS_':
-                self.load_student(values['_ALL_STUDENTS_'][0], window=window)
-                
-            elif event == '_ADD_STUDENT_':
-                self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
+            if not isinstance(event, tuple):
+                if event in (sg.WIN_CLOSED, '_CANCEL_'):
+                    break
+                elif event == '_ALL_STUDENTS_':
+                    self.load_student(values['_ALL_STUDENTS_'][0], window=window)
+                    
+                elif event == '_ADD_STUDENT_':
+                    self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
+            else:
+                if event[0] == '_ADD_COMMENT_':
+                    question_id = event[1]
+                    comment_text = values[('_NEW_COMMENT_', question_id)]
+                    self.add_comment(question_id, comment_text)
+                    if window is not None:
+                        window[('_NEW_COMMENT_', question_id)].update("")
                 
         window.close()
 
