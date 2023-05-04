@@ -26,7 +26,7 @@ class GUI():
     def add_student(self, first_name, last_name, window=None):
         file_name_wo_extension = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
         if file_name_wo_extension not in self.existing_student_data:
-            self.current_student = Student(file_name_wo_extension, self.student_data_full_dir)        
+            self.current_student = Student(file_name_wo_extension, self.template, self.student_data_full_dir)        
             self.existing_student_data.append(file_name_wo_extension)
             if window is not None:
                 window["_ALL_STUDENTS_"].update((*self.existing_student_data,))
@@ -109,7 +109,7 @@ class GUI():
     def load_student(self, student_file, window=None):
         if window is not None:
             window['_CURRENT_STUDENT_'].update(student_file)
-            self.current_student = Student(student_file)
+            self.current_student = Student(student_file, self.template)
 
     def show(self):
         window = None
@@ -130,5 +130,7 @@ class GUI():
                 self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
                 
         window.close()
-
+    '''
+    call Student.save_data
+    '''
 
