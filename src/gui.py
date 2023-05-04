@@ -1,8 +1,9 @@
 import PySimpleGUI as sg
 from json import load, dump
 import os
+from uuid import uuid4
 
-from src import data_dir, student_data_dir
+from src import data_dir, student_data_dir, template_dir, Q_A_file
 from src.template import Template
 from src.student import Student
 
@@ -17,10 +18,26 @@ class GUI():
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
         self.current_student = None
         if len(self.template.template_data) > 0:
+            self.QA_dir = os.path.join(self.cwd, template_dir, Q_A_file)
+            self.QA_data = None
+            self.load_QA()
             self.show()
     
     def __str__(self):
-        return self.template.__str__()     
+        return self.template.__str__()
+
+    def load_QA(self):  
+        with open(self.QA_dir, 'r') as f:
+            self.QA_data = load(f)
+
+        # write questions structure if QA is empty
+        if len(self.QA_data) == 0:
+            init_dict = {}
+            for key, _ in self.template.template_data.items():
+                init_dict.update({str(key): {}})
+            with open(self.QA_dir, 'w') as f:
+                dump(init_dict, f)
+            self.load_QA()
 
 
     def add_student(self, first_name, last_name, window=None):
@@ -36,9 +53,46 @@ class GUI():
             if window is not None:
                 window["_CURRENT_STUDENT_"].update(file_name_wo_extension)
                 window.refresh() 
+                    
         
-        
+    def create_comments(self, question_id):
+        current_comments_dict = self.QA_data[str(question_id)]
+        no_comments_present = len(current_comments_dict) == 0
+        comments = []
+        comments.append([sg.Text("No answers yet.", visible=no_comments_present, key=('_DEFAULT_EMPTY_COMMENT_', question_id))])
+        for key, value in current_comments_dict.items():
+            comment = [sg.Col([
+                        [
+                            sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', key), enable_events=True), 
+                            sg.Button("X", key=("_REMOVE_COMMENT", question_id, key), enable_events=True)
+                        ]], key=('_COMMENT_ROW_', key))]
+            comments.append(comment)
+        comments = [sg.Col(comments, key=('_COMMENT_FRAME_', question_id))]
+        return comments
+    
 
+    def add_comment(self, question_id, comment_text):
+        comment_id = str(uuid4())
+        comment_dict = {comment_id: comment_text}
+        self.QA_data[str(question_id)].update(comment_dict)
+        with open(self.QA_dir, 'w') as f:
+            dump(self.QA_data, f)
+        new_comment = [
+            sg.pin(
+                sg.Col([
+                    [
+                        sg.Checkbox(comment_text, key=('_CHECKBOX_COMMENT_', comment_id), enable_events=True, default=True), 
+                        sg.Button("X", key=("_REMOVE_COMMENT", question_id, comment_id), enable_events=True)
+                    ]
+                ], key=('_COMMENT_ROW_', comment_id))
+            )
+        ]
+        return new_comment
+    
+    def delete_comment(self, question_id, comment_id):
+        self.QA_data[str(question_id)].pop(comment_id)
+        with open(self.QA_dir, 'w') as f:
+            dump(self.QA_data, f)
         
 
     def create_layout(self):
@@ -72,15 +126,18 @@ class GUI():
             temp_question_dict = self.template.template_data[i]
             if temp_question_dict['sublevel'] !=0:
                 question_text = temp_question_dict['prescript'] + " " + temp_question_dict['title']
-                question = [questionTitle(question_text)]
-                comments = [sg.Text("No answers yet.", visible=True)] 
-                # TODO: update answers from Q_A.json
-                # TODO: add new comment
+                question = [sg.Col([
+                    [questionTitle(question_text)]
+                ])]
+                comments = self.create_comments(i)
+                add_comment = [sg.Col([
+                    [sg.Input(size=(50, 1), key=('_NEW_COMMENT_', i)), sg.Button('Add',enable_events=True, key=("_ADD_COMMENT_", i), size=(5, 1))]])]
                 questions_frame_content.append(question)
                 questions_frame_content.append(comments)
+                questions_frame_content.append(add_comment)
         
         questions_frame_column = [[
-            sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True)
+                sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, key='_QUESTION_FRAME_ALL_')
         ]]
 
 
@@ -121,13 +178,52 @@ class GUI():
             event, values = window.read()
             print(event, " - ", values)
 
-            if event in (sg.WIN_CLOSED, '_CANCEL_'):
-                break
-            elif event == '_ALL_STUDENTS_':
-                self.load_student(values['_ALL_STUDENTS_'][0], window=window)
-                
-            elif event == '_ADD_STUDENT_':
-                self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
+            if not isinstance(event, tuple):
+                if event in (sg.WIN_CLOSED, '_CANCEL_'):
+                    break
+                elif event == '_ALL_STUDENTS_':
+                    self.load_student(values['_ALL_STUDENTS_'][0], window=window)
+                    
+                elif event == '_ADD_STUDENT_':
+                    self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
+            else:
+                if event[0] == '_ADD_COMMENT_':
+                    # create new comment layout
+                    question_id = event[1]
+                    comment_text = values[('_NEW_COMMENT_', question_id)]
+                    new_comment_layout = self.add_comment(question_id, comment_text)
+                    if window is not None:
+                        # add new layout to existing
+                        window[('_NEW_COMMENT_', question_id)].update("")
+                        window.extend_layout(window[('_COMMENT_FRAME_', question_id)], [new_comment_layout])
+
+                        # remove default text
+                        window[('_DEFAULT_EMPTY_COMMENT_', question_id)].update(visible=False)
+                        window[('_DEFAULT_EMPTY_COMMENT_', question_id)].hide_row()
+
+                        # resize column such that scrollbar is adjusted
+                        window.visibility_changed()
+                        window['_QUESTION_FRAME_ALL_'].contents_changed()
+
+                elif event[0] == '_REMOVE_COMMENT':
+                    question_id = event[1]
+                    comment_id = event[2]
+                    if window is not None:
+                        # uncheck before deleting
+                        window[('_CHECKBOX_COMMENT_', comment_id)].update(value=False)
+                        
+                        # hide layout element as it cannot be actually removed
+                        window[('_COMMENT_ROW_', comment_id)].update(visible=False)
+                        window[('_COMMENT_ROW_', comment_id)].hide_row()
+
+                        # resize column such that scrollbar is adjusted
+                        window.visibility_changed()
+                        window['_QUESTION_FRAME_ALL_'].contents_changed()
+                    
+                    # delete comment from QA JSON
+                    self.delete_comment(question_id, comment_id)
+
+                        
                 
         window.close()
     '''
