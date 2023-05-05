@@ -228,5 +228,8 @@ class GUI():
         window.close()
     '''
     call Student.save_data
+    call mergy.py to merge the documents
+    def merge_comments(self):
     '''
+    
 
