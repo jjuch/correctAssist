@@ -6,6 +6,7 @@ from uuid import uuid4
 from src import data_dir, student_data_dir, template_dir, Q_A_file
 from src.template import Template
 from src.student import Student
+# import merge
 
 class GUI():
     def __init__(self, cwd):
@@ -100,6 +101,10 @@ class GUI():
 
         def questionTitle(text): return sg.Text(text, size=(50,1), font='Any 18')
 
+        menu_def = [
+            ['File', ['Add Students', 'Save', 'View comments']],['Tools', ['Merge']]
+        ]
+        
         select_student_column = [
             [sg.Text("Current Student: ", justification='l'), sg.Text("Nothing selected",key="_CURRENT_STUDENT_")],
             [sg.Listbox(list(self.existing_student_data), size=(35,25), enable_events=True, key='_ALL_STUDENTS_')]
@@ -143,14 +148,17 @@ class GUI():
 
         bottom_content = [
             [sg.Cancel(button_color='red', size=(10, 5), key='_CANCEL_'), sg.Button("Save", key='_SAVE_STUDENT_', size=(10,5))]
-        ]             
+        ]            
 
         self.layout = [
+            [[sg.Menu(menu_def)],
+            [sg.Text("", key='-TXT-',
+            expand_x=True, font='Any 18')]],
             [sg.Push(), sg.Text(self.template.template_data[0]['title'], font='Any 23', justification='c'), sg.Push()],
             [sg.Frame('Student Selection', student_selection_frame, size=(920, 100), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Frame("Questions", questions_frame_column, size=(920, 100), pad=50,  expand_x=True, expand_y=True, relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Col(bottom_content, justification='r')]   
-                  ]
+                ]
         
     def create_window(self):
         sg.theme('LightGrey')
@@ -186,6 +194,15 @@ class GUI():
                     
                 elif event == '_ADD_STUDENT_':
                     self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
+
+                elif event == 'Merge':
+                    print('Merge triggered')
+                    filename = sg.popup_get_text("Enter the file name to merge with: ", title="merge_editor")
+                    self.merge_comments(filename)
+                    print(filename)
+
+
+
             else:
                 if event[0] == '_ADD_COMMENT_':
                     # create new comment layout
@@ -222,6 +239,8 @@ class GUI():
                     
                     # delete comment from QA JSON
                     self.delete_comment(question_id, comment_id)
+                
+
 
                         
                 
@@ -229,7 +248,8 @@ class GUI():
     '''
     call Student.save_data
     call mergy.py to merge the documents
-    def merge_comments(self):
     '''
-    
 
+    def merge_comments(self, filename):
+        #merge(filename)
+        pass

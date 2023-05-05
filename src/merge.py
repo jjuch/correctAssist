@@ -1,7 +1,7 @@
 import os
 import json 
 
-def merge():
+def merge(filename):
     """
     In place operation, merges the comments
     """
@@ -20,7 +20,7 @@ def merge():
     path_to_comp = path_to_cwd
     os.chdir("..")
     path_to_comp = os.getcwd()
-    path_to_comp = os.path.join(path_to_comp, "correctAssist_comp")
+    path_to_comp = os.path.join(path_to_comp, filename)
     path_to_current_students = os.path.join(path_to_cwd, data_dir, student_data_dir)
     path_to_current_Q_A = os.path.join(path_to_cwd,template_dir, Q_A_file)
 
@@ -55,8 +55,7 @@ def merge():
         own_comments[k].update(extra_comments[k])
     with open(path_to_current_Q_A, 'w') as updated_qa:
         json.dump(own_comments, updated_qa)
-
-merge()    
-
+   
+# merge(correctAssist_comp)
 
     
