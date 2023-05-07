@@ -2,11 +2,11 @@ import PySimpleGUI as sg
 from json import load, dump
 import os
 from uuid import uuid4
+import csv
 
-from src import data_dir, student_data_dir, template_dir, Q_A_file
+from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir
 from src.template import Template
 from src.student import Student
-# import merge
 
 class GUI():
     def __init__(self, cwd):
@@ -163,7 +163,7 @@ class GUI():
     def create_window(self):
         sg.theme('LightGrey')
         self.create_layout()
-        window = sg.Window('correctAssist', self.layout, keep_on_top=True, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
+        window = sg.Window('correctAssist', self.layout, keep_on_top=False, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
         window.Maximize()
         return window
         
@@ -196,12 +196,54 @@ class GUI():
                     self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
 
                 elif event == 'Merge':
-                    print('Merge triggered')
-                    filename = sg.popup_get_text("Enter the file name to merge with: ", title="merge_editor")
-                    self.merge_comments(filename)
-                    print(filename)
+                    left_col = [
+                        [sg.Text('Folder:'), sg.In(size=(25,1), enable_events=True, key='_FOLDER_'), sg.FolderBrowse()]
+                    ]
+                    layout = [
+                        [sg.Column(left_col, element_justification='c')],
+                        [sg.Button('Merge files',  key='_MERGE_CONTENT_', size=(10,5))]
 
+                    ]
 
+  
+                
+                    folder_address = None
+
+                    folder_address = sg.popup_get_folder('Merge editor', initial_folder=path_to_cwd)
+                    # folder_address is instantiated once the 'Ok' is clicked
+                    # print(folder_address)
+                    if folder_address is not None:
+                        self.Merge(folder_address)
+                        print("Files merged successfully!")
+                        folder_address = None
+
+                elif event == 'Save':
+                    save = sg.popup_yes_no("Do you want to save?", title='Save')
+                    if save:
+                        self.save_student()
+                        print("Files saved successfully!")
+
+                elif event == 'Add Students':
+                    student_csv = None
+                    student_csv = sg.popup_get_file('Select the list of students', initial_folder=path_to_cwd)
+                    if student_csv is not None:
+                        self.load_students(student_csv)
+
+                        # merge_event, merge_value = merge_window.read()
+                        # if merge_event in (sg.WIN_CLOSED, 'Exit'):
+                        #     break
+
+                        # elif merge_event == '_FOLDER_':
+                        #     folder_address = merge_value['_FOLDER_']
+                        
+                        # elif folder_address is not None:
+                        #     if merge_event == '_MERGE_CONTENT_':
+                        #         self.Merge(folder_address)
+                        #         print("Files merged successfully!")
+                        #         merge_window.close()
+
+                        # elif merge_event == '_MERGE_CONTENT_' and folder_address is None:
+                        #     print('Please select a folder first')
 
             else:
                 if event[0] == '_ADD_COMMENT_':
@@ -245,11 +287,65 @@ class GUI():
                         
                 
         window.close()
+    def load_students(self, path_to_students_csv):
+        with open(path_to_students_csv, mode='r') as student_file:
+            csv_reader = csv.reader(student_file, delimiter=';')
+            header = 0
+            print(csv_reader)
+            for row in csv_reader:
+                if header == 0:
+                    header += 1
+                else:
+                    '''
+                    expected format: col(first_name), col(last_name)
+                    ''' 
+                    print(row)
+                    first_name = row[0]
+                    last_name = row[1]
+                    # student_file_format = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
+                    self.add_student(first_name, last_name)
+
+    def Merge(self, path_to_comp):
+        """
+        In place operation, merges the comments
+        """
+
+        path_to_current_students = os.path.join(path_to_cwd, data_dir, student_data_dir)
+        path_to_current_Q_A = os.path.join(path_to_cwd, template_dir, Q_A_file)
+
+        student_files = [student_json for student_json in os.listdir(path_to_current_students) if student_json.endswith('.json')]
+
+        path_to_students = os.path.join(path_to_comp, data_dir, student_data_dir)
+        path_to_Q_A = os.path.join(path_to_comp,template_dir, Q_A_file)
+        
+        # Merge student files
+        for student in student_files:
+            student = student.replace("'", '"')
+
+            path_to_current_student = os.path.join(path_to_current_students, student)
+            with open(path_to_current_student, 'r') as stc:
+                current_student = load(stc)
+            path_to_student = os.path.join(path_to_students, student)
+            with open(path_to_student, 'r') as st:
+                student_file = load(st)
+            for k in current_student.keys():
+                for i in student_file[k]:
+                    if i not in current_student[k]:
+                        current_student[k].append(i)
+            with open(path_to_current_student, 'w') as stc:
+                dump(current_student, stc, indent=4)
+
+        # Merge Q_A files
+        with open(path_to_Q_A, 'r') as com:
+            extra_comments = load(com)
+        with open(path_to_current_Q_A, 'r') as comc:
+            own_comments = load(comc)
+        for k in own_comments.keys():
+            own_comments[k].update(extra_comments[k])
+        with open(path_to_current_Q_A, 'w') as updated_qa:
+            dump(own_comments, updated_qa)
+        
     '''
     call Student.save_data
     call mergy.py to merge the documents
     '''
-
-    def merge_comments(self, filename):
-        #merge(filename)
-        pass
