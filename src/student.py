@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 from src import path_to_cwd, template_file, template_dir, data_dir, student_data_dir
+import csv
 
 
 class Student:
@@ -9,7 +10,7 @@ class Student:
         self.template = template
         self.file_path_student = os.path.join(path_to_cwd, data_dir, student_data_dir, student_name + ".json")
         self.student_name = student_name
-        self.add_student(student_name, student_path)
+        self.add_student(student_name)
 
         # This variable will later on be used to update the corresponding student data
         self.corrections = self.load_student_data(student_name)
@@ -17,7 +18,7 @@ class Student:
         
 
 
-    def add_student(self, student_name, student_path):
+    def add_student(self, student_name):
         file_name = student_name + ".json"
         try:
             i = 0
@@ -78,6 +79,9 @@ class Student:
         with open(self.file_path_student, 'x') as f:
             json.dump(self.corrections, f)
         print("Data saved successfully")
+
+    
+        
 
 
 '''
