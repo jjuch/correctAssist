@@ -6,7 +6,7 @@ from uuid import uuid4
 from src import data_dir, student_data_dir, template_dir, Q_A_file
 from src.template import Template
 from src.student import Student
-# import merge
+# from merge import *
 
 class GUI():
     def __init__(self, cwd):
@@ -149,7 +149,7 @@ class GUI():
         bottom_content = [
             [sg.Cancel(button_color='red', size=(10, 5), key='_CANCEL_'), sg.Button("Save", key='_SAVE_STUDENT_', size=(10,5))]
         ]            
-
+        
         self.layout = [
             [[sg.Menu(menu_def)],
             [sg.Text("", key='-TXT-',
@@ -163,7 +163,7 @@ class GUI():
     def create_window(self):
         sg.theme('LightGrey')
         self.create_layout()
-        window = sg.Window('correctAssist', self.layout, keep_on_top=True, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
+        window = sg.Window('correctAssist', self.layout, keep_on_top=False, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
         window.Maximize()
         return window
         
@@ -241,9 +241,6 @@ class GUI():
                     self.delete_comment(question_id, comment_id)
                 
 
-
-                        
-                
         window.close()
     '''
     call Student.save_data
