@@ -145,10 +145,11 @@ class GUI():
                 sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, key='_QUESTION_FRAME_ALL_')
         ]]
 
-
+        display_no_students = 'Number of students: \n' + str(len(self.existing_student_data))
         bottom_content = [
-            [sg.Cancel(button_color='red', size=(10, 5), key='_CANCEL_'), sg.Button("Save", key='_SAVE_STUDENT_', size=(10,5))]
-        ]            
+            [sg.Text(display_no_students), sg.Cancel(button_color='red', size=(10, 5), key='_CANCEL_'), sg.Button("Save", key='_SAVE_STUDENT_', size=(10,5))]
+        ]
+        
         
         self.layout = [
             [[sg.Menu(menu_def)],
@@ -285,22 +286,26 @@ class GUI():
 
         window.close()
     def load_students(self, path_to_students_csv):
+        """
+        expected format: col(first_name), col(last_name)
+        ex: First name, Last name
+            Willy, Wonka
+            ..., ...
+        """
+
         with open(path_to_students_csv, mode='r') as student_file:
-            csv_reader = csv.reader(student_file, delimiter=';')
+            csv_reader = csv.reader(student_file, delimiter=',')
             header = 0
             print(csv_reader)
             for row in csv_reader:
                 if header == 0:
                     header += 1
                 else:
-                    '''
-                    expected format: col(first_name), col(last_name)
-                    ''' 
-                    print(row)
                     first_name = row[0]
                     last_name = row[1]
-                    # student_file_format = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
-                    self.add_student(first_name, last_name)
+                    student_file_format = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
+                    if student_file_format not in self.existing_student_data:
+                        self.add_student(first_name, last_name)
 
     def Merge(self, path_to_comp):
         """
@@ -317,21 +322,24 @@ class GUI():
         
         # Merge student files
         for student in student_files:
-            student = student.replace("'", '"')
-
-            path_to_current_student = os.path.join(path_to_current_students, student)
-            with open(path_to_current_student, 'r') as stc:
-                current_student = load(stc)
-            path_to_student = os.path.join(path_to_students, student)
-            with open(path_to_student, 'r') as st:
-                student_file = load(st)
-            for k in current_student.keys():
-                for i in student_file[k]:
-                    if i not in current_student[k]:
-                        current_student[k].append(i)
-            with open(path_to_current_student, 'w') as stc:
-                dump(current_student, stc, indent=4)
-
+            # student = student.replace("'", '"')
+            try:
+                path_to_current_student = os.path.join(path_to_current_students, student)
+                with open(path_to_current_student, 'r') as stc:
+                    current_student = load(stc)
+                path_to_student = os.path.join(path_to_students, student)
+                with open(path_to_student, 'r') as st:
+                    student_file = load(st)
+                for k in current_student.keys():
+                    for i in student_file[k]:
+                        if i not in current_student[k]:
+                            current_student[k].append(i)
+                with open(path_to_current_student, 'w') as stc:
+                    dump(current_student, stc, indent=4)
+            except FileNotFoundError:
+                print("Student does not exist in the merge file.")
+        
+        
         # Merge Q_A files
         with open(path_to_Q_A, 'r') as com:
             extra_comments = load(com)
@@ -343,6 +351,6 @@ class GUI():
             dump(own_comments, updated_qa)
         
     '''
-    call Student.save_data
-    call mergy.py to merge the documents
+    Als er geen studenten zijn en men klikt in het menu -> error: list index out of range
+    namen worden niet meteen weergegeven als de studenten zijn geladen
     '''
