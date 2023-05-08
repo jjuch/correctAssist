@@ -12,20 +12,20 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak
 
 
 class Student:
-    def __init__(self, student_name, template, student_path=None):
+    def __init__(self, student_name, template, student_path=None, new_student=True):
         self.template = template
         self.file_path_student = os.path.join(path_to_cwd, data_dir, student_data_dir, student_name + ".json")
         self.student_name = student_name
-        self.add_student(student_name)
+        if new_student:
+            self.add_student()
 
         # This variable will later on be used to update the corresponding student data
-        self.corrections = self.load_student_data(student_name)
+        self.corrections = self.load_student_data()
 
         
 
 
-    def add_student(self, student_name):
-        file_name = student_name + ".json"
+    def add_student(self):
         try:
             i = 0
 
@@ -36,61 +36,58 @@ class Student:
             # Adapt the student file
             init_dict = {}
             for key, _ in self.template.template_data.items():
-                init_dict.update({str(key): []})
+                init_dict.update({str(key): {
+                                    'comments': [],
+                                    'score': None
+                                    }
+                                })
             with open(self.file_path_student, 'w') as f:
                 json.dump(init_dict, f)
             
         except FileExistsError as error:
-            print("[Error] This student already exists. Please select the student from the existing students.")
+            print("[Info] This student already exists. The data will be loaded...")
 
-    def load_student_data(self, student_name):
-        print("load_student called")
-        print(self.file_path_student)
+    def load_student_data(self):
         with open(self.file_path_student, 'r') as fps:
             student_dict = json.load(fps)
-        print("new update", student_dict)
         return student_dict    
                    
 
     def remove_comment(self, question_id, comment_id):
-        """
-        Only for comments
-        """
-        print("remove_comment called")
-        with open(self.file_path_student) as fps:
-            student_dict = json.load(fps)
-        if question_id not in student_dict.keys():
-            student_dict.update({question_id: comment_id})
-        else:
-            # Avoid adding a comment twice
-            if comment_id not in student_dict[question_id]:
-                student_dict[question_id].append(comment_id)
+        current_comments = self.corrections[str(question_id)]['comments']
+        if comment_id in current_comments:
+            current_comments.remove(comment_id)
+        new_corrections = self.corrections
+        new_corrections[str(question_id)]['comments'] = current_comments
+        self.corrections = new_corrections
 
 
     def add_comment(self, question_id, comment_id):
-        """
-        Q_A is not updated
-        """
-        print("add_comment called")
-        with open(self.file_path_student) as fps:
-            student_dict = json.load(fps)
-        if question_id not in student_dict.keys():
-            student_dict.update({question_id: comment_id})
-        else:
-            # Avoid adding a comment twice
-            if comment_id not in student_dict[question_id]:
-                student_dict[question_id].append(comment_id)
+        current_comments = self.corrections[str(question_id)]['comments']
+        if comment_id not in current_comments:
+            current_comments.append(comment_id)
+        new_corrections = self.corrections
+        new_corrections[str(question_id)]['comments'] = current_comments
+        self.corrections = new_corrections
+    
+    def add_score(self, question_id, score):
+        new_score = self.corrections
+        new_score[str(question_id)]['score'] = score
+        self.corrections = new_score
+
     
     def save_data(self):
-        with open(self.file_path_student, 'x') as f:
+        with open(self.file_path_student, 'w') as f:
             json.dump(self.corrections, f)
         print("Data saved successfully")
 
+
     def generate_report(self, QA_dict):
-        pdfmetrics.registerFont(TTFont('UGent Panno normal', 'fonts/UGentPannoText-Normal.ttf'))
-        pdfmetrics.registerFont(TTFont('UGent Panno medium', 'fonts/UGentPannoText-Medium.ttf'))
-        pdfmetrics.registerFont(TTFont('UGent Panno semiBold', 'fonts/UGentPannoText-SemiBold.ttf'))
-        pdfmetrics.registerFont(TTFont('UGent Panno semiLight', 'fonts/UGentPannoText-semiLight.ttf'))
+        font_path = os.path.join(path_to_cwd, 'src', 'fonts')
+        pdfmetrics.registerFont(TTFont('UGent Panno normal', os.path.join(font_path, 'UGentPannoText-Normal.ttf')))
+        pdfmetrics.registerFont(TTFont('UGent Panno medium', os.path.join(font_path, 'UGentPannoText-Medium.ttf')))
+        pdfmetrics.registerFont(TTFont('UGent Panno semiBold', os.path.join(font_path, 'UGentPannoText-SemiBold.ttf')))
+        pdfmetrics.registerFont(TTFont('UGent Panno semiLight', os.path.join(font_path,'UGentPannoText-semiLight.ttf')))
         ugentBlue = Color(30/255, 100/255, 200/255, alpha=1)
         ugentBlack = Color(0, 0, 0, alpha=1)
         ugentWhite = Color(1, 1, 1, alpha=1)
@@ -98,7 +95,7 @@ class Student:
         normalParagraphStyle = ParagraphStyle(
             name='normal',
             fontName='UGent Panno normal',
-            fontSize=12,
+            fontSize=10,
             textColor=ugentBlack
         )
         titleParagraphStyle = ParagraphStyle(
@@ -115,14 +112,33 @@ class Student:
             textcolor=ugentBlack,
             spaceAfter=10
         )
-        scoreParagraphStyle = ParagraphStyle(
-            name='answer',
-            fontName='UGent Panno normal',
-            fontSize=10,
-            textColor=ugentBlack,
-            spaceAfter=10
-        )
 
+        def fileContent():
+            # Name on top
+            elements = []
+            for question_id, el in self.template.template_data.items():
+                if el['sublevel'] == 0:
+                    #title
+                    elements.append(Paragraph("<font face='UGent Panno semiBold'><u>{} - {}</u></font>".format(el['title'], self.student_name), style=titleParagraphStyle))
+                else:
+                    # section/subsection
+                    if el['score'] is None:
+                        text = "<font face='UGent Panno semiBold'>{} {}</font>".format(el['prescript'], el['title'])
+                    else:
+                        current_score = self.corrections[str(question_id)]['score']
+                        current_score = '' if current_score is None else current_score
+                        text = "<font face='UGent Panno semiBold'>{} {} - {}/{}</font>".format(el['prescript'], el['title'], current_score, el['score'])
+                    elements.append(Paragraph(text, style=subtitleParagraphStyle))
+
+                    for comment_id in self.corrections[str(question_id)]['comments']:
+                        text_comment = QA_dict[str(question_id)][comment_id]
+                        elements.append(Paragraph(text_comment, style=normalParagraphStyle, bulletText='-'))
+            return elements
+    
+        path_to_pdf = os.path.join(path_to_cwd, data_dir, 'reports')
+        document = SimpleDocTemplate(os.path.join(path_to_pdf, self.student_name + ".pdf"), pagesize=A4)
+        story = fileContent()
+        document.build(story)
 
 
     

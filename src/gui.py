@@ -48,7 +48,8 @@ class GUI():
     def add_student(self, first_name, last_name, window=None):
         file_name_wo_extension = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
         if file_name_wo_extension not in self.existing_student_data:
-            self.current_student = Student(file_name_wo_extension, self.template, self.student_data_full_dir)        
+            self.current_student = Student(file_name_wo_extension, self.template, self.student_data_full_dir)
+            self.clear_form(window)       
             self.existing_student_data.append(file_name_wo_extension)
             if window is not None:
                 window["_ALL_STUDENTS_"].update((*self.existing_student_data,))
@@ -68,7 +69,7 @@ class GUI():
         for key, value in current_comments_dict.items():
             comment = [sg.Col([
                         [
-                            sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', key), enable_events=True), 
+                            sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', question_id, key), enable_events=True), 
                             sg.Button("X", key=("_REMOVE_COMMENT", question_id, key), enable_events=True)
                         ]], key=('_COMMENT_ROW_', key))]
             comments.append(comment)
@@ -86,7 +87,7 @@ class GUI():
             sg.pin(
                 sg.Col([
                     [
-                        sg.Checkbox(comment_text, key=('_CHECKBOX_COMMENT_', comment_id), enable_events=True, default=True), 
+                        sg.Checkbox(comment_text, key=('_CHECKBOX_COMMENT_', question_id, comment_id), enable_events=True, default=True), 
                         sg.Button("X", key=("_REMOVE_COMMENT", question_id, comment_id), enable_events=True)
                     ]
                 ], key=('_COMMENT_ROW_', comment_id))
@@ -103,11 +104,11 @@ class GUI():
     def create_layout(self):
         def TextLabel(text): return sg.Text(text+':', justification='r', size=(50,1))
 
-        def questionTitle(text, score): 
+        def questionTitle(text, score, question_id): 
             if score is not None:
                 result = [
                     sg.Text(text, size=(50,1), font='Any 18'),
-                    sg.Input(size=(4, 1), font='Any 15'),
+                    sg.Input(size=(4, 1), font='Any 15', key=('_SCORE_', question_id), enable_events=True),
                     sg.Text('/' + str(score), font='Any 15')
                     ]
             else:
@@ -115,7 +116,7 @@ class GUI():
             return result
 
         menu_def = [
-            ['File', ['Add Students', 'Save', 'View comments']],['Tools', ['Merge']], ['Generate', ['Current student', 'All students']]
+            ['File', ['Load students (csv)', 'Save', 'View comments']],['Tools', ['Merge']], ['Generate', ['PDF - Current student', 'PDF - All students']]
         ]
         
         select_student_column = [
@@ -145,7 +146,7 @@ class GUI():
             if temp_question_dict['sublevel'] !=0:
                 question_text = temp_question_dict['prescript'] + " " + temp_question_dict['title']
                 question = [sg.Col([
-                    questionTitle(question_text, temp_question_dict['score'])
+                    questionTitle(question_text, temp_question_dict['score'], i)
                 ])]
                 comments = self.create_comments(i)
                 add_comment = [sg.Col([
@@ -180,15 +181,29 @@ class GUI():
         window = sg.Window('correctAssist - V' + __version__, self.layout, keep_on_top=False, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
         window.Maximize()
         return window
-        
-
-    def save_student(self):
-        print('saving...')
+    
+    
+    def clear_form(self, window):
+        if window is not None:
+            for e in window.element_list():
+                if type(e) is sg.Checkbox:
+                    e.update(value=False)
+                elif type(e) is sg.Input:
+                    e.update(value="")
 
     def load_student(self, student_file, window=None):
         if window is not None:
             window['_CURRENT_STUDENT_'].update(student_file)
-            self.current_student = Student(student_file, self.template)
+            self.clear_form(window)
+            self.current_student = Student(student_file, self.template, new_student=False)
+            for question_id, value in self.current_student.corrections.items():
+                comments = value['comments']
+                score = value['score']
+                for comment_id in comments:
+                    window[('_CHECKBOX_COMMENT_', int(question_id), comment_id)].update(value=True)
+                if score is not None:
+                    window[('_SCORE_', int(question_id))].update(value=score)
+
 
     def show(self):
         window = None
@@ -231,13 +246,19 @@ class GUI():
                         print("Files merged successfully!")
                         folder_address = None
 
-                elif event == 'Save':
+                elif event in ('_SAVE_STUDENT_', 'Save'):
                     save = sg.popup_yes_no("Do you want to save?", title='Save')
                     if save:
-                        self.save_student()
+                        self.current_student.save_data()
                         print("Files saved successfully!")
+                elif event == 'PDF - Current student':
+                    self.current_student.generate_report(self.QA_data)
+                elif event == 'PDF - All students':
+                    for student in self.existing_student_data:
+                        temp_student = Student(student, self.template, new_student=False)
+                        temp_student.generate_report(self.QA_data)
 
-                elif event == 'Add Students':
+                elif event == 'Load students (csv)':
                     student_csv = None
                     student_csv = sg.popup_get_file('Select the list of students', initial_folder=path_to_cwd)
                     if student_csv is not None:
@@ -277,13 +298,21 @@ class GUI():
                         # resize column such that scrollbar is adjusted
                         window.visibility_changed()
                         window['_QUESTION_FRAME_ALL_'].contents_changed()
+                elif event[0] == '_CHECKBOX_COMMENT_':
+                    question_id = event[1]
+                    comment_id = event[2]
+                    if window is not None:
+                        if values[event]:
+                            self.current_student.add_comment(question_id, comment_id)
+                        else:
+                            self.current_student.remove_comment(question_id, comment_id)
 
                 elif event[0] == '_REMOVE_COMMENT':
                     question_id = event[1]
                     comment_id = event[2]
                     if window is not None:
                         # uncheck before deleting
-                        window[('_CHECKBOX_COMMENT_', comment_id)].update(value=False)
+                        window[('_CHECKBOX_COMMENT_', question_id, comment_id)].update(value=False)
                         
                         # hide layout element as it cannot be actually removed
                         window[('_COMMENT_ROW_', comment_id)].update(visible=False)
@@ -295,6 +324,13 @@ class GUI():
                     
                     # delete comment from QA JSON
                     self.delete_comment(question_id, comment_id)
+                elif event[0] == '_SCORE_':
+                    question_id = event[1]
+                    if values[event] == '':
+                        new_score = None
+                    else:
+                        new_score = values[event]
+                    self.current_student.add_score(question_id, new_score)
                 
 
         window.close()
