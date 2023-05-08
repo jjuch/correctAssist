@@ -1,1 +1,6 @@
+freetype-py==2.3.0
+Pillow==9.5.0
+pycairo==1.23.0
 PySimpleGUI==4.60.4
+reportlab==4.0.0
+rlPyCairo==0.2.0

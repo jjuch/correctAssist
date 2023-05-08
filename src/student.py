@@ -1,8 +1,14 @@
 import os
 import json
-import uuid
 from src import path_to_cwd, template_file, template_dir, data_dir, student_data_dir
 import csv
+
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.colors import Color
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak
 
 
 class Student:
@@ -79,6 +85,45 @@ class Student:
         with open(self.file_path_student, 'x') as f:
             json.dump(self.corrections, f)
         print("Data saved successfully")
+
+    def generate_report(self, QA_dict):
+        pdfmetrics.registerFont(TTFont('UGent Panno normal', 'fonts/UGentPannoText-Normal.ttf'))
+        pdfmetrics.registerFont(TTFont('UGent Panno medium', 'fonts/UGentPannoText-Medium.ttf'))
+        pdfmetrics.registerFont(TTFont('UGent Panno semiBold', 'fonts/UGentPannoText-SemiBold.ttf'))
+        pdfmetrics.registerFont(TTFont('UGent Panno semiLight', 'fonts/UGentPannoText-semiLight.ttf'))
+        ugentBlue = Color(30/255, 100/255, 200/255, alpha=1)
+        ugentBlack = Color(0, 0, 0, alpha=1)
+        ugentWhite = Color(1, 1, 1, alpha=1)
+
+        normalParagraphStyle = ParagraphStyle(
+            name='normal',
+            fontName='UGent Panno normal',
+            fontSize=12,
+            textColor=ugentBlack
+        )
+        titleParagraphStyle = ParagraphStyle(
+            name='title',
+            fontName='UGent Panno semiBold',
+            fontSize=16,
+            textColor=ugentBlue,
+            spaceAfter=10
+        )
+        subtitleParagraphStyle = ParagraphStyle(
+            name='subtitle',
+            fontName='UGent Panno semiBold',
+            fontsize=16, 
+            textcolor=ugentBlack,
+            spaceAfter=10
+        )
+        scoreParagraphStyle = ParagraphStyle(
+            name='answer',
+            fontName='UGent Panno normal',
+            fontSize=10,
+            textColor=ugentBlack,
+            spaceAfter=10
+        )
+
+
 
     
         

@@ -4,7 +4,7 @@ import os
 from uuid import uuid4
 import csv
 
-from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir
+from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir, student_pdf_dir, __version__
 from src.template import Template
 from src.student import Student
 
@@ -16,6 +16,10 @@ class GUI():
         if not os.path.exists(self.student_data_full_dir):
             print("[Info] create a student data directory...")
             os.makedirs(self.student_data_full_dir)
+        self.student_pdf_full_dir = os.path.join(self.cwd, data_dir, student_pdf_dir)
+        if not os.path.exists(self.student_pdf_full_dir):
+            print("[Info] create a student reports directory...")
+            os.makedirs(self.student_pdf_full_dir)
         self.existing_student_data = [x.split('.')[0] for x in os.listdir(self.student_data_full_dir)] # remove extensions
         self.current_student = None
         if len(self.template.template_data) > 0:
@@ -99,10 +103,19 @@ class GUI():
     def create_layout(self):
         def TextLabel(text): return sg.Text(text+':', justification='r', size=(50,1))
 
-        def questionTitle(text): return sg.Text(text, size=(50,1), font='Any 18')
+        def questionTitle(text, score): 
+            if score is not None:
+                result = [
+                    sg.Text(text, size=(50,1), font='Any 18'),
+                    sg.Input(size=(4, 1), font='Any 15'),
+                    sg.Text('/' + str(score), font='Any 15')
+                    ]
+            else:
+                result = [sg.Text(text, size=(50,1), font='Any 18')]           
+            return result
 
         menu_def = [
-            ['File', ['Add Students', 'Save', 'View comments']],['Tools', ['Merge']]
+            ['File', ['Add Students', 'Save', 'View comments']],['Tools', ['Merge']], ['Generate', ['Current student', 'All students']]
         ]
         
         select_student_column = [
@@ -132,7 +145,7 @@ class GUI():
             if temp_question_dict['sublevel'] !=0:
                 question_text = temp_question_dict['prescript'] + " " + temp_question_dict['title']
                 question = [sg.Col([
-                    [questionTitle(question_text)]
+                    questionTitle(question_text, temp_question_dict['score'])
                 ])]
                 comments = self.create_comments(i)
                 add_comment = [sg.Col([
@@ -152,7 +165,7 @@ class GUI():
         
         
         self.layout = [
-            [[sg.Menu(menu_def)],
+            [[sg.Menu(menu_def, key='_MENU_')],
             [sg.Text("", key='-TXT-',
             expand_x=True, font='Any 18')]],
             [sg.Push(), sg.Text(self.template.template_data[0]['title'], font='Any 23', justification='c'), sg.Push()],
@@ -164,7 +177,7 @@ class GUI():
     def create_window(self):
         sg.theme('LightGrey')
         self.create_layout()
-        window = sg.Window('correctAssist', self.layout, keep_on_top=False, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
+        window = sg.Window('correctAssist - V' + __version__, self.layout, keep_on_top=False, finalize=True, margins=(0,0), resizable=True, size=(1500,500)).finalize()
         window.Maximize()
         return window
         
@@ -214,7 +227,7 @@ class GUI():
                     # folder_address is instantiated once the 'Ok' is clicked
                     # print(folder_address)
                     if folder_address is not None:
-                        self.Merge(folder_address)
+                        self.merge(folder_address)
                         print("Files merged successfully!")
                         folder_address = None
 
@@ -285,6 +298,8 @@ class GUI():
                 
 
         window.close()
+
+
     def load_students(self, path_to_students_csv):
         """
         expected format: col(first_name), col(last_name)
@@ -307,7 +322,8 @@ class GUI():
                     if student_file_format not in self.existing_student_data:
                         self.add_student(first_name, last_name)
 
-    def Merge(self, path_to_comp):
+
+    def merge(self, path_to_comp):
         """
         In place operation, merges the comments
         """

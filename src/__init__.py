@@ -10,3 +10,7 @@ path_to_cwd = os.getcwd()
 # data variables
 data_dir = "data"
 student_data_dir = "students"
+student_pdf_dir = "reports"
+
+# metadata
+from .version import __version__

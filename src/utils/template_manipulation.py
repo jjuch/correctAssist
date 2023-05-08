@@ -11,13 +11,13 @@ def create_template(path_template_dir):
 
 = This is the title
             
-1. Question 1
+1. Question 1 //5
 
-1. A. Question 1A
+1. A. Question 1A //1
 
-1. B. Question 1B
+1. B. Question 1B //2
 
-2. Question 2
+2. Question 2 //3
             """)
         print("[Info] An empty template file is created...")
     with open(os.path.join(path_template_dir, Q_A_file), 'x') as f:
@@ -31,9 +31,9 @@ def read_template(path_template_dir):
         template = f.readlines()
         _ctr = 0 
         for i in range(len(template)):
-            sublevel, result, prescript = process_template_line(template[i])
+            sublevel, result, prescript, score = process_template_line(template[i])
             if result is not None:
-                temp = dict(sublevel=sublevel, title=result, prescript=prescript)
+                temp = dict(sublevel=sublevel, title=result, prescript=prescript, score=score)
                 template_data[_ctr] = temp
                 _ctr += 1
     
@@ -47,6 +47,7 @@ def process_template_line(_str):
     result = None
     sublevel = None
     prescript = None
+    score = None
     _str = _str.lstrip()
     _str = _str.replace("\n", "")
     # remove empty lines
@@ -69,5 +70,13 @@ def process_template_line(_str):
                 prescript = _str[:last_idx + 1]
                 result = _str[last_idx + 1:]
                 result = result.lstrip()
+                idx_score = result.find("//")
+                if idx_score:
+                    try:
+                        score = float(result[idx_score + 2:])
+                        result = result[0: idx_score]
+                    except ValueError:
+                        print("[Error] Something went wrong in the template. A score should be indicated by two backslashes and a number, e.g. '//5.4'.")
+                        exit()
 
-    return (sublevel, result, prescript)
+    return (sublevel, result, prescript, score)
