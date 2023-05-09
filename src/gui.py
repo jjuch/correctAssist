@@ -333,7 +333,6 @@ class GUI():
         with open(path_to_students_csv, mode='r') as student_file:
             csv_reader = csv.reader(student_file, delimiter=',')
             header = 0
-            print(csv_reader)
             for row in csv_reader:
                 if header == 0:
                     header += 1
