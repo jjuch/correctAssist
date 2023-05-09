@@ -1,7 +1,9 @@
 import os
 import json
-from src import path_to_cwd, template_file, template_dir, data_dir, student_data_dir
-import csv
+import PySimpleGUI as sg
+from src import path_to_cwd, data_dir, student_data_dir
+
+
 
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -12,7 +14,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak
 
 
 class Student:
-    def __init__(self, student_name, template, student_path=None, new_student=True):
+    def __init__(self, student_name, template, new_student=True):
         self.template = template
         self.file_path_student = os.path.join(path_to_cwd, data_dir, student_data_dir, student_name + ".json")
         self.student_name = student_name
@@ -22,13 +24,9 @@ class Student:
         # This variable will later on be used to update the corresponding student data
         self.corrections = self.load_student_data()
 
-        
-
 
     def add_student(self):
         try:
-            i = 0
-
             # Create the file
             with open(self.file_path_student, 'x') as f:
                 f.write("{}")
@@ -75,11 +73,23 @@ class Student:
         new_score[str(question_id)]['score'] = score
         self.corrections = new_score
 
+    def changed(self):
+        old_data = self.load_student_data()
+        new_data = self.corrections
+        print("Old: ", old_data)
+        print("New: ", new_data)
+        return old_data != new_data
     
-    def save_data(self):
-        with open(self.file_path_student, 'w') as f:
-            json.dump(self.corrections, f)
-        print("Data saved successfully")
+    def save_data(self, extra_info=''):
+        if self.changed():
+            save = sg.popup_yes_no(extra_info, "\nDo you want to save?", title='Save')
+            print("Save: ", save)
+            if save.lower() == 'yes':
+                with open(self.file_path_student, 'w') as f:
+                    json.dump(self.corrections, f)
+                print("Data saved successfully")
+        else:
+            print("Nothing to be saved...")
 
 
     def generate_report(self, QA_dict):
@@ -139,17 +149,3 @@ class Student:
         document = SimpleDocTemplate(os.path.join(path_to_pdf, self.student_name + ".pdf"), pagesize=A4)
         story = fileContent()
         document.build(story)
-
-
-    
-        
-
-
-'''
-- questions should have an id: "0", "1", ... (ordereddict <template>)
-- init_student: add structure directly (new student -> "0":[], "1":[] ...)
-- a student json file should only contain comment_ids, no actual comments
-- think about a merging function (merge different )
-'''
-
-

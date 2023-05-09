@@ -36,9 +36,6 @@ def read_template(path_template_dir):
                 temp = dict(sublevel=sublevel, title=result, prescript=prescript, score=score)
                 template_data[_ctr] = temp
                 _ctr += 1
-    
-    # for key, value in template_data.items():
-    #     print(key, " -> ", value)
     return template_data
                 
 
