@@ -141,15 +141,5 @@ class Student:
         document.build(story)
 
 
-    
-        
-
-
-'''
-- questions should have an id: "0", "1", ... (ordereddict <template>)
-- init_student: add structure directly (new student -> "0":[], "1":[] ...)
-- a student json file should only contain comment_ids, no actual comments
-- think about a merging function (merge different )
-'''
 
 

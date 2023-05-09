@@ -3,8 +3,10 @@ from json import load, dump
 import os
 from uuid import uuid4
 import csv
-
 from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir, student_pdf_dir, __version__
+ 
+from src.utils.merge_comments import Merge
+
 from src.template import Template
 from src.student import Student
 
@@ -239,10 +241,10 @@ class GUI():
                     folder_address = None
 
                     folder_address = sg.popup_get_folder('Merge editor', initial_folder=path_to_cwd)
-                    # folder_address is instantiated once the 'Ok' is clicked
+                    # folder_address is instantiated once 'Ok' is clicked
                     # print(folder_address)
                     if folder_address is not None:
-                        self.merge(folder_address)
+                        Merge(folder_address)
                         print("Files merged successfully!")
                         folder_address = None
 
@@ -263,22 +265,6 @@ class GUI():
                     student_csv = sg.popup_get_file('Select the list of students', initial_folder=path_to_cwd)
                     if student_csv is not None:
                         self.load_students(student_csv)
-
-                        # merge_event, merge_value = merge_window.read()
-                        # if merge_event in (sg.WIN_CLOSED, 'Exit'):
-                        #     break
-
-                        # elif merge_event == '_FOLDER_':
-                        #     folder_address = merge_value['_FOLDER_']
-                        
-                        # elif folder_address is not None:
-                        #     if merge_event == '_MERGE_CONTENT_':
-                        #         self.Merge(folder_address)
-                        #         print("Files merged successfully!")
-                        #         merge_window.close()
-
-                        # elif merge_event == '_MERGE_CONTENT_' and folder_address is None:
-                        #     print('Please select a folder first')
 
             else:
                 if event[0] == '_ADD_COMMENT_':
@@ -359,50 +345,4 @@ class GUI():
                         self.add_student(first_name, last_name)
 
 
-    def merge(self, path_to_comp):
-        """
-        In place operation, merges the comments
-        """
-
-        path_to_current_students = os.path.join(path_to_cwd, data_dir, student_data_dir)
-        path_to_current_Q_A = os.path.join(path_to_cwd, template_dir, Q_A_file)
-
-        student_files = [student_json for student_json in os.listdir(path_to_current_students) if student_json.endswith('.json')]
-
-        path_to_students = os.path.join(path_to_comp, data_dir, student_data_dir)
-        path_to_Q_A = os.path.join(path_to_comp,template_dir, Q_A_file)
-        
-        # Merge student files
-        for student in student_files:
-            # student = student.replace("'", '"')
-            try:
-                path_to_current_student = os.path.join(path_to_current_students, student)
-                with open(path_to_current_student, 'r') as stc:
-                    current_student = load(stc)
-                path_to_student = os.path.join(path_to_students, student)
-                with open(path_to_student, 'r') as st:
-                    student_file = load(st)
-                for k in current_student.keys():
-                    for i in student_file[k]:
-                        if i not in current_student[k]:
-                            current_student[k].append(i)
-                with open(path_to_current_student, 'w') as stc:
-                    dump(current_student, stc, indent=4)
-            except FileNotFoundError:
-                print("Student does not exist in the merge file.")
-        
-        
-        # Merge Q_A files
-        with open(path_to_Q_A, 'r') as com:
-            extra_comments = load(com)
-        with open(path_to_current_Q_A, 'r') as comc:
-            own_comments = load(comc)
-        for k in own_comments.keys():
-            own_comments[k].update(extra_comments[k])
-        with open(path_to_current_Q_A, 'w') as updated_qa:
-            dump(own_comments, updated_qa)
-        
-    '''
-    Als er geen studenten zijn en men klikt in het menu -> error: list index out of range
-    namen worden niet meteen weergegeven als de studenten zijn geladen
-    '''
+    
