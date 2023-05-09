@@ -338,8 +338,9 @@ class GUI():
                 if header == 0:
                     header += 1
                 else:
-                    first_name = row[0]
-                    last_name = row[1]
+                    name = row[0].split(", ")
+                    first_name = name[1]
+                    last_name = name[0]
                     student_file_format = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
                     if student_file_format not in self.existing_student_data:
                         self.add_student(first_name, last_name)
