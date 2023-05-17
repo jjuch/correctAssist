@@ -126,7 +126,7 @@ class GUI():
         
         select_student_column = [
             [sg.Text("Current Student: ", justification='l'), sg.Text("Nothing selected",key="_CURRENT_STUDENT_")],
-            [sg.Listbox(list(self.existing_student_data), size=(35,25), enable_events=True, key='_ALL_STUDENTS_')]
+            [sg.Listbox(list(self.existing_student_data), size=(35,50), expand_y=True, enable_events=True, key='_ALL_STUDENTS_')]
         ]
 
         add_student_column = [
@@ -175,7 +175,7 @@ class GUI():
             [sg.Text("", key='-TXT-',
             expand_x=True, font='Any 18')]],
             [sg.Push(), sg.Text(self.template.template_data[0]['title'], font='Any 23', justification='c'), sg.Push()],
-            [sg.Frame('Student Selection', student_selection_frame, size=(920, 100), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
+            [sg.Frame('Student Selection', student_selection_frame, size=(920, 200), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Frame("Questions", questions_frame_column, size=(920, 100), pad=50,  expand_x=True, expand_y=True, relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Col(bottom_content, justification='r')]   
                 ]
@@ -338,7 +338,7 @@ class GUI():
             ..., ...
         """
 
-        with open(path_to_students_csv, mode='r') as student_file:
+        with open(path_to_students_csv, mode='r', encoding='UTF-8') as student_file:
             csv_reader = csv.reader(student_file, delimiter=',')
             header = 0
             # print(csv_reader)

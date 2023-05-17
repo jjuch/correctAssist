@@ -59,12 +59,14 @@ def process_template_line(_str):
                 _idx = 0
                 _ctr = 0
                 last_idx = 0
+                idx_score = _str.find("//")
+                question_str = _str if idx_score == -1 else _str[:idx_score]
                 while _idx != -1:
                     last_idx = _idx
-                    _idx = _str.find('.', _idx + 1, len(_str) - 1)
+                    _idx = question_str.find('.', _idx + 1, len(_str) - 1)
                     _ctr += 1
                 sublevel = _ctr - 1
-                prescript = _str[:last_idx + 1]
+                prescript = question_str[:last_idx + 1]
                 result = _str[last_idx + 1:]
                 result = result.lstrip()
                 idx_score = result.find("//")
