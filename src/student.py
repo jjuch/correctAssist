@@ -26,6 +26,9 @@ class Student:
 
 
     def add_student(self):
+        '''
+        Called when a new name is typed in the gui, it reports the given name in the 'Student' class and makes an accompanying '.json' file. If the student already exists, an error will be raised, without further disrupting the program. 
+        '''
         try:
             i = 0
 
@@ -48,12 +51,21 @@ class Student:
             print("[Info] This student already exists. The data will be loaded...")
 
     def load_student_data(self):
+        '''
+        When an existing student is selected, his/her data will be loaded into a (temporary) class variable 'corrections' to be further manipulated by 'add_comment', 'remove_comment', ... \n
+        The manipulations are not continuously saved, only when 'Save' is pressed, the adaptations become permanent.
+        '''
         with open(self.file_path_student, 'r') as fps:
             student_dict = json.load(fps)
         return student_dict    
                    
 
     def remove_comment(self, question_id, comment_id):
+        '''
+        Arguments: question_id and comment_id \n
+        These arguments are automatically selected by un-checking the desired comment at the appropriate question in the gui. \n
+        Remove a comment from a selected student.
+        '''
         current_comments = self.corrections[str(question_id)]['comments']
         if comment_id in current_comments:
             current_comments.remove(comment_id)

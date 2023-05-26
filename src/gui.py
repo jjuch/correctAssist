@@ -324,11 +324,20 @@ class GUI():
 
     def load_students(self, path_to_students_csv):
         """
-        expected format: col(first_name), col(last_name)
-        ex: First name, Last name
-            Willy, Wonka
-            ..., ...
+        path_to_student_csv is created by selecting the appropriate folder that contains all functionalities present in the 'correctAssist' folder and the complementary comments to the current one. This function is called via "Tools>Merge" in the gui.
         """
+        '''
+        In case a student list is available, this function allows to load all students at once and create their accompanying '.json'-files containing an empty template for their feedback.
+        '''
+        '''
+        expected format: the studentfile should ba a csv-file, organised as follows: (usually available as the exam list)
+        ____________________
+        |full name         |
+        |------------------|
+        |Willy, Wonka      |
+        |------------------|
+        |__________________|
+        '''
 
         with open(path_to_students_csv, mode='r') as student_file:
             csv_reader = csv.reader(student_file, delimiter=',')
@@ -343,6 +352,3 @@ class GUI():
                     student_file_format = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
                     if student_file_format not in self.existing_student_data:
                         self.add_student(first_name, last_name)
-
-
-    
