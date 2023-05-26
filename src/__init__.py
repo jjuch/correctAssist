@@ -13,4 +13,4 @@ student_data_dir = "students"
 student_pdf_dir = "reports"
 
 # metadata
-from .version import __version__
+from .version import __version__, __developers__, __year__

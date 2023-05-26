@@ -3,16 +3,16 @@ from json import load, dump
 import os
 from uuid import uuid4
 import csv
-from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir, student_pdf_dir, __version__
+from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir, student_pdf_dir, __version__, __developers__, __year__
  
-from src.utils.merge_comments import Merge
+from src.utils.merge_comments import merge
 
 from src.template import Template
 from src.student import Student
 
 class GUI():
     def __init__(self, cwd):
-        self.template = Template(cwd)
+        self.template = Template()
         self.cwd = cwd
         self.student_data_full_dir = os.path.join(self.cwd, data_dir, student_data_dir)
         if not os.path.exists(self.student_data_full_dir):
@@ -50,6 +50,8 @@ class GUI():
     def add_student(self, first_name, last_name, window=None):
         file_name_wo_extension = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
         if file_name_wo_extension not in self.existing_student_data:
+            if self.current_student is not None:
+                self.current_student.save_data(extra_info="The content of the former student has changed and is not saved yet.")
             self.current_student = Student(file_name_wo_extension, self.template, self.student_data_full_dir)
             self.clear_form(window)       
             self.existing_student_data.append(file_name_wo_extension)
@@ -95,6 +97,7 @@ class GUI():
                 ], key=('_COMMENT_ROW_', comment_id))
             )
         ]
+        self.current_student.add_comment(question_id, comment_id)
         return new_comment
     
     def delete_comment(self, question_id, comment_id):
@@ -118,12 +121,12 @@ class GUI():
             return result
 
         menu_def = [
-            ['File', ['Load students (csv)', 'Save', 'View comments']],['Tools', ['Merge']], ['Generate', ['PDF - Current student', 'PDF - All students']]
+            ['File', ['Load students (csv)', 'Save', 'View comments']],['Tools', ['Merge']], ['Generate', ['PDF - Current student', 'PDF - All students']], ['Info', ['About']]
         ]
         
         select_student_column = [
             [sg.Text("Current Student: ", justification='l'), sg.Text("Nothing selected",key="_CURRENT_STUDENT_")],
-            [sg.Listbox(list(self.existing_student_data), size=(35,25), enable_events=True, key='_ALL_STUDENTS_')]
+            [sg.Listbox(list(self.existing_student_data), size=(35,50), expand_y=True, enable_events=True, key='_ALL_STUDENTS_')]
         ]
 
         add_student_column = [
@@ -172,7 +175,7 @@ class GUI():
             [sg.Text("", key='-TXT-',
             expand_x=True, font='Any 18')]],
             [sg.Push(), sg.Text(self.template.template_data[0]['title'], font='Any 23', justification='c'), sg.Push()],
-            [sg.Frame('Student Selection', student_selection_frame, size=(920, 100), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
+            [sg.Frame('Student Selection', student_selection_frame, size=(920, 200), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Frame("Questions", questions_frame_column, size=(920, 100), pad=50,  expand_x=True, expand_y=True, relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Col(bottom_content, justification='r')]   
                 ]
@@ -195,6 +198,8 @@ class GUI():
 
     def load_student(self, student_file, window=None):
         if window is not None:
+            if self.current_student is not None:
+                self.current_student.save_data(extra_info="The content of the former student has changed and is not saved yet.")
             window['_CURRENT_STUDENT_'].update(student_file)
             self.clear_form(window)
             self.current_student = Student(student_file, self.template, new_student=False)
@@ -219,6 +224,8 @@ class GUI():
 
             if not isinstance(event, tuple):
                 if event in (sg.WIN_CLOSED, '_CANCEL_'):
+                    if self.current_student is not None:
+                        self.current_student.save_data()
                     break
                 elif event == '_ALL_STUDENTS_':
                     self.load_student(values['_ALL_STUDENTS_'][0], window=window)
@@ -227,16 +234,14 @@ class GUI():
                     self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
 
                 elif event == 'Merge':
-                    left_col = [
-                        [sg.Text('Folder:'), sg.In(size=(25,1), enable_events=True, key='_FOLDER_'), sg.FolderBrowse()]
-                    ]
-                    layout = [
-                        [sg.Column(left_col, element_justification='c')],
-                        [sg.Button('Merge files',  key='_MERGE_CONTENT_', size=(10,5))]
+                    # left_col = [
+                    #     [sg.Text('Folder:'), sg.In(size=(25,1), enable_events=True, key='_FOLDER_'), sg.FolderBrowse()]
+                    # ]
+                    # layout = [
+                    #     [sg.Column(left_col, element_justification='c')],
+                    #     [sg.Button('Merge files',  key='_MERGE_CONTENT_', size=(10,5))]
 
-                    ]
-
-  
+                    # ]
                 
                     folder_address = None
 
@@ -244,15 +249,13 @@ class GUI():
                     # folder_address is instantiated once 'Ok' is clicked
                     # print(folder_address)
                     if folder_address is not None:
-                        Merge(folder_address)
+                        merge(folder_address)
                         print("Files merged successfully!")
                         folder_address = None
 
                 elif event in ('_SAVE_STUDENT_', 'Save'):
-                    save = sg.popup_yes_no("Do you want to save?", title='Save')
-                    if save:
+                    if self.current_student is not None:
                         self.current_student.save_data()
-                        print("Files saved successfully!")
                 elif event == 'PDF - Current student':
                     self.current_student.generate_report(self.QA_data)
                 elif event == 'PDF - All students':
@@ -265,7 +268,12 @@ class GUI():
                     student_csv = sg.popup_get_file('Select the list of students', initial_folder=path_to_cwd)
                     if student_csv is not None:
                         self.load_students(student_csv)
-
+                elif event == 'About':
+                    sg.popup_ok(""" 
+                    Created by: {}
+                    year: {}
+                    version: {}
+                    more: https://github.com/jjuch/correctAssist""".format(__developers__, __year__, __version__), title="About correctAssist")
             else:
                 if event[0] == '_ADD_COMMENT_':
                     # create new comment layout
@@ -318,8 +326,8 @@ class GUI():
                         new_score = values[event]
                     self.current_student.add_score(question_id, new_score)
                 
-
         window.close()
+
 
 
     def load_students(self, path_to_students_csv):
@@ -339,9 +347,10 @@ class GUI():
         |__________________|
         '''
 
-        with open(path_to_students_csv, mode='r') as student_file:
+        with open(path_to_students_csv, mode='r', encoding='UTF-8') as student_file:
             csv_reader = csv.reader(student_file, delimiter=',')
             header = 0
+            # print(csv_reader)
             for row in csv_reader:
                 if header == 0:
                     header += 1

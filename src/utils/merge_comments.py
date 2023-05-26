@@ -2,7 +2,7 @@ from json import dump, load
 import os
 from src import *
 
-def Merge(path_to_comp):
+def merge(path_to_comp):
     """
     In place operation, merges the comments
     """
