@@ -228,26 +228,18 @@ class GUI():
                         self.current_student.save_data()
                     break
                 elif event == '_ALL_STUDENTS_':
-                    self.load_student(values['_ALL_STUDENTS_'][0], window=window)
+                    if len(self.existing_student_data) != 0:
+                        self.load_student(values['_ALL_STUDENTS_'][0], window=window)
+                    else:
+                        print("No student selected, please select an existing student or add a new one.")
                     
                 elif event == '_ADD_STUDENT_':
                     self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
 
                 elif event == 'Merge':
-                    # left_col = [
-                    #     [sg.Text('Folder:'), sg.In(size=(25,1), enable_events=True, key='_FOLDER_'), sg.FolderBrowse()]
-                    # ]
-                    # layout = [
-                    #     [sg.Column(left_col, element_justification='c')],
-                    #     [sg.Button('Merge files',  key='_MERGE_CONTENT_', size=(10,5))]
-
-                    # ]
-                
                     folder_address = None
 
                     folder_address = sg.popup_get_folder('Merge editor', initial_folder=path_to_cwd)
-                    # folder_address is instantiated once 'Ok' is clicked
-                    # print(folder_address)
                     if folder_address is not None:
                         merge(folder_address)
                         print("Files merged successfully!")
@@ -338,7 +330,7 @@ class GUI():
         In case a student list is available, this function allows to load all students at once and create their accompanying '.json'-files containing an empty template for their feedback.
         '''
         '''
-        expected format: the studentfile should ba a csv-file, organised as follows: (usually available as the exam list)
+        expected format: the studentfile should be a csv-file, organised as follows: (usually available as the exam list)
         ____________________
         |full name         |
         |------------------|
