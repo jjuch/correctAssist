@@ -29,14 +29,17 @@ def read_template(path_template_dir):
     template_data = OrderedDict()
     with open(os.path.join(path_template_dir, template_file), 'r') as f:
         template = f.readlines()
-        _ctr = 0 
+        _ctr = 0
+        max_total_score = 0.0
         for i in range(len(template)):
             sublevel, result, prescript, score = process_template_line(template[i])
             if result is not None:
                 temp = dict(sublevel=sublevel, title=result, prescript=prescript, score=score)
                 template_data[_ctr] = temp
                 _ctr += 1
-    return template_data
+            if score is not None:
+                max_total_score += float(score)
+    return template_data, max_total_score
                 
 
 

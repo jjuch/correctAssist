@@ -39,6 +39,7 @@ class Student:
                                     'score': None
                                     }
                                 })
+            init_dict.update({"total_score": None})
             with open(self.file_path_student, 'w') as f:
                 json.dump(init_dict, f)
             
@@ -69,15 +70,31 @@ class Student:
         self.corrections = new_corrections
     
     def add_score(self, question_id, score):
+        score = '0.' if score == '.' else score # handle error
+        # update total score
         new_score = self.corrections
+        old_score = new_score[str(question_id)]['score']
+        old_total_score = new_score['total_score']
+        new_total_score = 0.0 if old_total_score is None else float(old_total_score)        
+        if score is not None:
+            if old_score is not None:
+                new_total_score -= float(old_score)
+                new_total_score += float(score)
+            else:
+                new_total_score += float(score)
+        else:
+            if old_score is not None:
+                new_total_score -= float(old_score)
+        new_score['total_score'] = str(new_total_score)
+
+        # save new score in dict
         new_score[str(question_id)]['score'] = score
         self.corrections = new_score
+        return new_total_score
 
     def changed(self):
         old_data = self.load_student_data()
         new_data = self.corrections
-        print("Old: ", old_data)
-        print("New: ", new_data)
         return old_data != new_data
     
     def save_data(self, extra_info=''):
