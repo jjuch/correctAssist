@@ -172,6 +172,10 @@ class Student:
                     for comment_id in self.corrections[str(question_id)]['comments']:
                         text_comment = QA_dict[str(question_id)][comment_id]
                         elements.append(Paragraph(text_comment, style=normalParagraphStyle, bulletText='-'))
+
+            # append total score
+            text = "<font face='UGent Panno semiBold'>Total: {}/{}</font>".format(self.corrections['total_score'], self.template.max_total_score)
+            elements.append(Paragraph(text, style=subtitleParagraphStyle))
             return elements
     
         path_to_pdf = os.path.join(path_to_cwd, data_dir, 'reports')
