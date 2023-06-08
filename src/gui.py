@@ -126,7 +126,7 @@ class GUI():
         
         select_student_column = [
             [sg.Text("Current Student: ", justification='l'), sg.Text("Nothing selected",key="_CURRENT_STUDENT_")],
-            [sg.Listbox(list(self.existing_student_data), size=(35,25), enable_events=True, key='_ALL_STUDENTS_')]
+            [sg.Listbox(list(self.existing_student_data), size=(35,50), expand_y=True, enable_events=True, key='_ALL_STUDENTS_')]
         ]
 
         add_student_column = [
@@ -179,7 +179,7 @@ class GUI():
             [sg.Text("", key='-TXT-',
             expand_x=True, font='Any 18')]],
             [sg.Push(), sg.Text(self.template.template_data[0]['title'], font='Any 23', justification='c'), sg.Push()],
-            [sg.Frame('Student Selection', student_selection_frame, size=(920, 100), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
+            [sg.Frame('Student Selection', student_selection_frame, size=(920, 200), pad=50,  expand_x=True,  relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Frame("Questions", questions_frame_column, size=(920, 100), pad=50,  expand_x=True, expand_y=True, relief=sg.RELIEF_GROOVE, border_width=3)],
             [sg.Col(bottom_content, justification='r')]   
                 ]
@@ -236,26 +236,18 @@ class GUI():
                         self.current_student.save_data()
                     break
                 elif event == '_ALL_STUDENTS_':
-                    self.load_student(values['_ALL_STUDENTS_'][0], window=window)
+                    if len(self.existing_student_data) != 0:
+                        self.load_student(values['_ALL_STUDENTS_'][0], window=window)
+                    else:
+                        print("No student selected, please select an existing student or add a new one.")
                     
                 elif event == '_ADD_STUDENT_':
                     self.add_student(values['_FIRST_NAME_'], values['_LAST_NAME_'], window=window)
 
                 elif event == 'Merge':
-                    # left_col = [
-                    #     [sg.Text('Folder:'), sg.In(size=(25,1), enable_events=True, key='_FOLDER_'), sg.FolderBrowse()]
-                    # ]
-                    # layout = [
-                    #     [sg.Column(left_col, element_justification='c')],
-                    #     [sg.Button('Merge files',  key='_MERGE_CONTENT_', size=(10,5))]
-
-                    # ]
-                
                     folder_address = None
 
                     folder_address = sg.popup_get_folder('Merge editor', initial_folder=path_to_cwd)
-                    # folder_address is instantiated once 'Ok' is clicked
-                    # print(folder_address)
                     if folder_address is not None:
                         merge(folder_address)
                         print("Files merged successfully!")
@@ -341,13 +333,22 @@ class GUI():
 
     def load_students(self, path_to_students_csv):
         """
-        expected format: col(first_name), col(last_name)
-        ex: First name, Last name
-            Willy, Wonka
-            ..., ...
+        path_to_student_csv is created by selecting the appropriate folder that contains all functionalities present in the 'correctAssist' folder and the complementary comments to the current one. This function is called via "Tools>Merge" in the gui.
         """
+        '''
+        In case a student list is available, this function allows to load all students at once and create their accompanying '.json'-files containing an empty template for their feedback.
+        '''
+        '''
+        expected format: the studentfile should be a csv-file, organised as follows: (usually available as the exam list)
+        ____________________
+        |full name         |
+        |------------------|
+        |Willy, Wonka      |
+        |------------------|
+        |__________________|
+        '''
 
-        with open(path_to_students_csv, mode='r') as student_file:
+        with open(path_to_students_csv, mode='r', encoding='UTF-8') as student_file:
             csv_reader = csv.reader(student_file, delimiter=',')
             header = 0
             # print(csv_reader)
@@ -361,6 +362,3 @@ class GUI():
                     student_file_format = last_name.replace(" ", "") + "_" + first_name.replace(" ", "")
                     if student_file_format not in self.existing_student_data:
                         self.add_student(first_name, last_name)
-
-
-    
