@@ -38,11 +38,21 @@ def merge(path_to_comp):
             path_to_student = os.path.join(path_to_students, student)
             with open(path_to_student, 'r') as st:
                 student_file = load(st)
-
             for question_id in current_student.keys():
-                for comment_id in student_file[question_id]:
-                    if comment_id not in current_student[question_id]:
-                        current_student[question_id].append(comment_id)
+                for key in current_student[question_id].keys():
+                    if key == "comments":
+                        try: 
+                            for comment_id in student_file[question_id][key]:
+                                if comment_id not in current_student[question_id][key]:
+                                    current_student[question_id][key].append(comment_id)
+                        except:
+                            continue
+                    elif key == "score":
+                        try:
+                            if current_student[question_id][key] is None:
+                                current_student[question_id][key] = student_file[question_id][key]
+                        except:
+                            continue
             with open(path_to_current_student, 'w') as stc:
                 dump(current_student, stc, indent=4)
         except FileNotFoundError:
@@ -55,6 +65,9 @@ def merge(path_to_comp):
     with open(path_to_current_Q_A, 'r') as comc:
         own_comments = load(comc)
     for k in own_comments.keys():
-        own_comments[k].update(extra_comments[k])
+        try:
+            own_comments[k].update(extra_comments[k])
+        except:
+            pass
     with open(path_to_current_Q_A, 'w') as updated_qa:
         dump(own_comments, updated_qa)

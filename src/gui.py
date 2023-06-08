@@ -3,12 +3,13 @@ from json import load, dump
 import os
 from uuid import uuid4
 import csv
-from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir, student_pdf_dir, __version__, __developers__, __year__
+from src import path_to_cwd, template_dir, template_file, Q_A_file, data_dir, student_data_dir, student_pdf_dir, __version__, __developers__, __year__, csv_grades, csv_grades
  
 from src.utils.merge_comments import merge
 
 from src.template import Template
 from src.student import Student
+from src.utils.generate_csv import generate_csv
 
 class GUI():
     def __init__(self, cwd):
@@ -73,7 +74,7 @@ class GUI():
         for key, value in current_comments_dict.items():
             comment = [sg.Col([
                         [
-                            sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', question_id, key), enable_events=True), 
+                            sg.Checkbox(value, key=('_CHECKBOX_COMMENT_', question_id, key), enable_events=True),
                             sg.Button("X", key=("_REMOVE_COMMENT", question_id, key), enable_events=True)
                         ]], key=('_COMMENT_ROW_', key))]
             comments.append(comment)
@@ -121,7 +122,7 @@ class GUI():
             return result
 
         menu_def = [
-            ['File', ['Load students (csv)', 'Save', 'View comments']],['Tools', ['Merge']], ['Generate', ['PDF - Current student', 'PDF - All students']], ['Info', ['About']]
+            ['File', ['Load students (csv)', 'Save', 'View comments']],['Tools', ['Merge', 'Total score']], ['Generate', ['PDF - Current student', 'PDF - All students']], ['Info', ['About']]
         ]
         
         select_student_column = [
@@ -145,7 +146,6 @@ class GUI():
         ]]
 
         questions_frame_content = []
-
         for i in range(len(self.template.template_data)):
             temp_question_dict = self.template.template_data[i]
             if temp_question_dict['sublevel'] !=0:
@@ -252,8 +252,11 @@ class GUI():
                     self.current_student.generate_report(self.QA_data)
                 elif event == 'PDF - All students':
                     for student in self.existing_student_data:
+                        print(student)
                         temp_student = Student(student, self.template, new_student=False)
                         temp_student.generate_report(self.QA_data)
+                    path_to_grades = os.path.join(path_to_cwd, data_dir, csv_grades)
+                    generate_csv(self.existing_student_data, self.student_data_full_dir, path_to_grades)
 
                 elif event == 'Load students (csv)':
                     student_csv = None
@@ -324,7 +327,7 @@ class GUI():
 
     def load_students(self, path_to_students_csv):
         """
-        path_to_student_csv is created by selecting the appropriate folder that contains all functionalities present in the 'correctAssist' folder and the complementary comments to the current one. This function is called via "Tools>Merge" in the gui.
+        path_to_student_csv is created by selecting the appropriate folder that contains all functionalities present in the 'correctAssist' folder and the complementary comments to the current one. This function is called via "Tools>Merge" in the GUI.
         """
         '''
         In case a student list is available, this function allows to load all students at once and create their accompanying '.json'-files containing an empty template for their feedback.
