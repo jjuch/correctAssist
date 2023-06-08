@@ -42,6 +42,7 @@ class Student:
                                     'score': None
                                     }
                                 })
+            init_dict.update({"total_score": None})
             with open(self.file_path_student, 'w') as f:
                 json.dump(init_dict, f)
             
@@ -81,15 +82,31 @@ class Student:
         self.corrections = new_corrections
     
     def add_score(self, question_id, score):
+        score = '0.' if score == '.' else score # handle error
+        # update total score
         new_score = self.corrections
+        old_score = new_score[str(question_id)]['score']
+        old_total_score = new_score['total_score']
+        new_total_score = 0.0 if old_total_score is None else float(old_total_score)        
+        if score is not None:
+            if old_score is not None:
+                new_total_score -= float(old_score)
+                new_total_score += float(score)
+            else:
+                new_total_score += float(score)
+        else:
+            if old_score is not None:
+                new_total_score -= float(old_score)
+        new_score['total_score'] = str(new_total_score)
+
+        # save new score in dict
         new_score[str(question_id)]['score'] = score
         self.corrections = new_score
+        return new_total_score
 
     def changed(self):
         old_data = self.load_student_data()
         new_data = self.corrections
-        print("Old: ", old_data)
-        print("New: ", new_data)
         return old_data != new_data
     
     def save_data(self, extra_info=''):
@@ -155,6 +172,10 @@ class Student:
                     for comment_id in self.corrections[str(question_id)]['comments']:
                         text_comment = QA_dict[str(question_id)][comment_id]
                         elements.append(Paragraph(text_comment, style=normalParagraphStyle, bulletText='-'))
+
+            # append total score
+            text = "<font face='UGent Panno semiBold'>Total: {}/{}</font>".format(self.corrections['total_score'], self.template.max_total_score)
+            elements.append(Paragraph(text, style=subtitleParagraphStyle))
             return elements
     
         path_to_pdf = os.path.join(path_to_cwd, data_dir, 'reports')

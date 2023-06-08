@@ -159,6 +159,10 @@ class GUI():
                 questions_frame_content.append(question)
                 questions_frame_content.append(comments)
                 questions_frame_content.append(add_comment)
+        total = [sg.Col([
+            [sg.Text("Total: "), sg.Text("", key='_TOTAL_SCORE_'), sg.Text(" /{}".format(self.template.max_total_score))]
+        ])]
+        questions_frame_content.append(total)
         
         questions_frame_column = [[
                 sg.Col(questions_frame_content, scrollable=True, vertical_scroll_only=True, expand_x=True, expand_y=True, key='_QUESTION_FRAME_ALL_')
@@ -204,12 +208,16 @@ class GUI():
             self.clear_form(window)
             self.current_student = Student(student_file, self.template, new_student=False)
             for question_id, value in self.current_student.corrections.items():
-                comments = value['comments']
-                score = value['score']
-                for comment_id in comments:
-                    window[('_CHECKBOX_COMMENT_', int(question_id), comment_id)].update(value=True)
-                if score is not None:
-                    window[('_SCORE_', int(question_id))].update(value=score)
+                # Iterate over all question ids and avoid the total score element. That is handled later.
+                if question_id != 'total_score': 
+                    comments = value['comments']
+                    score = value['score']
+                    for comment_id in comments:
+                        window[('_CHECKBOX_COMMENT_', int(question_id), comment_id)].update(value=True)
+                    if score is not None:
+                        window[('_SCORE_', int(question_id))].update(value=score)
+                else:
+                    window['_TOTAL_SCORE_'].update(value)
 
 
     def show(self):
@@ -319,7 +327,8 @@ class GUI():
                         new_score = None
                     else:
                         new_score = values[event]
-                    self.current_student.add_score(question_id, new_score)
+                    total_score = self.current_student.add_score(question_id, new_score)
+                    window['_TOTAL_SCORE_'].update(total_score)
                 
         window.close()
 

@@ -10,9 +10,10 @@ class Template():
         path_template_dir = os.path.join(self.cwd, template_dir)
         init_done = os.path.exists(path_template_dir)
         self.template_data = []
+        self.max_total_score = None
         if init_done:
             print("[Info] The template files exist and are being loaded...")
-            self.template_data = read_template(path_template_dir)
+            self.template_data, self.max_total_score = read_template(path_template_dir)
         else:
             create_template(path_template_dir)
 
