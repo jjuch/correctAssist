@@ -260,11 +260,10 @@ class GUI():
                     self.current_student.generate_report(self.QA_data)
                 elif event == 'PDF - All students':
                     for student in self.existing_student_data:
-                        print(student)
                         temp_student = Student(student, self.template, new_student=False)
                         temp_student.generate_report(self.QA_data)
                     path_to_grades = os.path.join(path_to_cwd, data_dir, csv_grades)
-                    generate_csv(self.existing_student_data, self.student_data_full_dir, path_to_grades)
+                    generate_csv(self.existing_student_data, self.student_data_full_dir, path_to_grades, self.template)
 
                 elif event == 'Load students (csv)':
                     student_csv = None
